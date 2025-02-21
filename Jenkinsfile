@@ -10,6 +10,7 @@ pipeline {
         AWS_ACCESS_KEY_ID     = credentials('AWS_ACCESS_KEY_ID')
         AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
         AWS_DEFAULT_REGION    = 'ap-southeast-1'
+        TERRAFORM            = '/opt/homebrew/bin/terraform' // Add this line with the full path to terraform
     }
 
     stages {
@@ -20,13 +21,13 @@ pipeline {
         }
         stage('Terraform init') {
             steps {
-                sh 'terraform init'
+                sh '${TERRAFORM} init'
             }
         }
         stage('Plan') {
             steps {
-                sh 'terraform plan -out tfplan'
-                sh 'terraform show -no-color tfplan > tfplan.txt'
+                sh '${TERRAFORM} plan -out tfplan'
+                sh '${TERRAFORM} show -no-color tfplan > tfplan.txt'
             }
         }
         stage('Apply / Destroy') {
@@ -39,15 +40,14 @@ pipeline {
                             parameters: [text(name: 'Plan', description: 'Please review the plan', defaultValue: plan)]
                         }
 
-                        sh 'terraform ${action} -input=false tfplan'
+                        sh '${TERRAFORM} ${action} -input=false tfplan'
                     } else if (params.action == 'destroy') {
-                        sh 'terraform ${action} --auto-approve'
+                        sh '${TERRAFORM} ${action} --auto-approve'
                     } else {
                         error "Invalid action selected. Please choose either 'apply' or 'destroy'."
                     }
                 }
             }
         }
-
     }
 }
